@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Closed — Backend Overview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; line-height: 1.7; }
+  header { background: #1a1a2e; padding: 40px; border-bottom: 3px solid #e94560; }
+  header h1 { font-size: 2.2rem; color: #e94560; letter-spacing: 2px; }
+  header p { color: #aaa; margin-top: 8px; font-size: 1rem; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+  h2 { font-size: 1.5rem; color: #e94560; margin: 50px 0 16px; border-left: 4px solid #e94560; padding-left: 14px; }
+  h3 { font-size: 1.1rem; color: #f0a500; margin: 28px 0 10px; }
+  h4 { font-size: 0.95rem; color: #7ec8e3; margin: 18px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  p { color: #ccc; margin-bottom: 12px; }
+  code { background: #1e1e1e; color: #7ec8e3; padding: 2px 7px; border-radius: 4px; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+  pre { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; overflow-x: auto; margin: 14px 0 20px; font-size: 0.85rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; color: #a8d8a8; }
+  .file-block { background: #141414; border: 1px solid #2a2a2a; border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+  .file-path { font-size: 0.8rem; color: #888; font-family: 'Courier New', monospace; margin-bottom: 8px; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-right: 6px; margin-bottom: 8px; }
+  .tag-entity { background: #1a3a2a; color: #4caf82; }
+  .tag-service { background: #1a2a3a; color: #7ec8e3; }
+  .tag-controller { background: #3a1a1a; color: #e94560; }
+  .tag-config { background: #2a2a1a; color: #f0a500; }
+  .tag-dto { background: #2a1a3a; color: #b39ddb; }
+  .tag-repo { background: #1a3a3a; color: #80cbc4; }
+  .tag-filter { background: #3a2a1a; color: #ffb74d; }
+  .flow-box { background: #1a1a2e; border: 1px solid #e94560; border-radius: 10px; padding: 20px 28px; margin: 20px 0; }
+  .flow-box ol { padding-left: 22px; }
+  .flow-box li { color: #ddd; margin-bottom: 8px; }
+  .flow-box li span { color: #e94560; font-weight: bold; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .db-table { background: #141414; border: 1px solid #333; border-radius: 8px; padding: 16px; }
+  .db-table h4 { color: #f0a500; margin-bottom: 10px; }
+  .db-table ul { list-style: none; padding: 0; }
+  .db-table ul li { font-size: 0.85rem; color: #bbb; padding: 3px 0; border-bottom: 1px solid #222; font-family: 'Courier New', monospace; }
+  .db-table ul li:last-child { border-bottom: none; }
+  .highlight { color: #e94560; }
+  .secret-note { background: #1a0f0f; border: 1px solid #e94560; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-size: 0.88rem; color: #f0a0a0; }
+  .section-divider { border: none; border-top: 1px solid #2a2a2a; margin: 40px 0; }
+  .structure-tree { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #aaa; line-height: 2; background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; padding: 20px; }
+  .structure-tree .dir { color: #f0a500; }
+  .structure-tree .file { color: #7ec8e3; }
+  .structure-tree .note { color: #666; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CASE CLOSED — Backend Architecture</h1>
+  <p>Spring Boot · PostgreSQL · JWT Auth · Anthropic Claude AI · Java 21</p>
+</header>
+
+<div class="container">
+
+  <!-- PROJECT STRUCTURE -->
+  <h2>Project Structure</h2>
+  <div class="structure-tree">
+    <span class="dir">backend/src/main/java/com/caseclosed/backend/</span><br>
+    &nbsp;&nbsp;├── <span class="file">BackendApplication.java</span> &nbsp;<span class="note">// app entry point</span><br>
+    &nbsp;&nbsp;├── <span class="dir">config/</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">SecurityConfig.java</span> &nbsp;<span class="note">// JWT filter chain, BCrypt, AuthManager</span><br>
+    &nbsp;&nbsp;├── <span class="dir">controller/</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">AuthController.java</span> &nbsp;<span class="note">// POST /api/auth/register, /login</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">CaseController.java</span> &nbsp;<span class="note">// POST /api/cases, GET /api/cases/{id}</span><br>
+    &nbsp;&nbsp;├── <span class="dir">dto/</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="dir">auth/</span> &nbsp;<span class="note">// RegisterRequest, LoginRequest, AuthResponse</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="dir">cases/</span> &nbsp;<span class="note">// CaseResponse, SuspectResponse (no secrets)</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="dir">generation/</span> &nbsp;<span class="note">// GeneratedCaseData, GeneratedSuspectData (internal)</span><br>
+    &nbsp;&nbsp;├── <span class="dir">entity/</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">User.java</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">GameCase.java</span> &nbsp;<span class="note">// table name: "cases"</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">Suspect.java</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">Conversation.java</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">Folder.java</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">NpcInterruption.java</span><br>
+    &nbsp;&nbsp;├── <span class="dir">enums/</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">CaseStatus.java</span> &nbsp;<span class="note">// active, won, lost</span><br>
+    &nbsp;&nbsp;├── <span class="dir">filter/</span><br>
+    &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">JwtAuthFilter.java</span> &nbsp;<span class="note">// intercepts every request</span><br>
+    &nbsp;&nbsp;├── <span class="dir">repository/</span> &nbsp;<span class="note">// 6 Spring Data JPA interfaces</span><br>
+    &nbsp;&nbsp;└── <span class="dir">service/</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">AuthService.java</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">JwtService.java</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">UserDetailsServiceImpl.java</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">ClaudeService.java</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">CaseGenerationService.java</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">CaseService.java</span><br>
+    <br>
+    <span class="dir">backend/src/main/resources/</span><br>
+    &nbsp;&nbsp;├── <span class="file">application.yml</span> &nbsp;<span class="note">// safe defaults — committed to git</span><br>
+    &nbsp;&nbsp;└── <span class="file">application-local.yml</span> &nbsp;<span class="note">// real secrets — GITIGNORED</span>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DATABASE -->
+  <h2>Database Tables (PostgreSQL)</h2>
+  <p>Hibernate auto-creates all tables on startup via <code>ddl-auto: update</code>. JSONB columns store raw JSON blobs — Hibernate 6 maps them via <code>@JdbcTypeCode(SqlTypes.JSON)</code>.</p>
+
+  <div class="grid">
+    <div class="db-table">
+      <h4>users</h4>
+      <ul>
+        <li>id — UUID (PK)</li>
+        <li>username — VARCHAR</li>
+        <li>email — VARCHAR (unique)</li>
+        <li>password_hash — VARCHAR</li>
+        <li>created_at — TIMESTAMP</li>
+        <li>games_played — INT</li>
+        <li>games_won — INT</li>
+      </ul>
+    </div>
+    <div class="db-table">
+      <h4>cases</h4>
+      <ul>
+        <li>id — UUID (PK)</li>
+        <li>user_id — UUID (FK → users)</li>
+        <li>status — ENUM (active/won/lost)</li>
+        <li>created_at — TIMESTAMP</li>
+        <li>completed_at — TIMESTAMP</li>
+        <li><span class="highlight">truth_document — JSONB ← NEVER sent to frontend</span></li>
+        <li>case_briefing — JSONB</li>
+        <li>accusation_suspect_id — UUID</li>
+        <li>verdict — JSONB</li>
+      </ul>
+    </div>
+    <div class="db-table">
+      <h4>suspects</h4>
+      <ul>
+        <li>id — UUID (PK)</li>
+        <li>case_id — UUID (FK → cases)</li>
+        <li>name, age, title, company</li>
+        <li>relationship_to_founder</li>
+        <li>avatar_seed — VARCHAR</li>
+        <li>interrogation_count — INT</li>
+        <li><span class="highlight">is_killer — BOOLEAN ← NEVER sent to frontend</span></li>
+      </ul>
+    </div>
+    <div class="db-table">
+      <h4>conversations</h4>
+      <ul>
+        <li>id — UUID (PK)</li>
+        <li>case_id — UUID (FK)</li>
+        <li>suspect_id — UUID (FK)</li>
+        <li>messages — JSONB array</li>
+        <li>started_at — TIMESTAMP</li>
+        <li>ended_at — TIMESTAMP</li>
+      </ul>
+    </div>
+    <div class="db-table">
+      <h4>folders</h4>
+      <ul>
+        <li>id — UUID (PK)</li>
+        <li>case_id — UUID (FK)</li>
+        <li>suspect_id — UUID (FK)</li>
+        <li>contradictions — TEXT</li>
+        <li>intent_to_murder — TEXT</li>
+        <li>updated_at — TIMESTAMP</li>
+      </ul>
+    </div>
+    <div class="db-table">
+      <h4>npc_interruptions</h4>
+      <ul>
+        <li>id — UUID (PK)</li>
+        <li>case_id — UUID (FK)</li>
+        <li>npc_name, npc_title</li>
+        <li>npc_conversation — JSONB</li>
+        <li>triggered_at — TIMESTAMP</li>
+        <li>suspect_id — UUID (FK)</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- STEP 1 -->
+  <h2>Step 1 — JPA Entities &amp; Repositories</h2>
+
+  <div class="file-block">
+    <div class="file-path">entity/User.java</div>
+    <span class="tag tag-entity">@Entity</span>
+    <p>Maps to the <code>users</code> table. Stores player accounts. Passwords are never stored as plaintext — only the BCrypt hash.</p>
+    <pre><code>@Entity
+@Table(name = "users")
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;   // BCrypt hash, never raw password
+
+    @Builder.Default
+    private int gamesPlayed = 0;
+
+    @Builder.Default
+    private int gamesWon = 0;
+}</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">entity/GameCase.java</div>
+    <span class="tag tag-entity">@Entity</span>
+    <p>Maps to the <code>cases</code> table. Named <code>GameCase</code> because <code>case</code> is a reserved keyword in Java. The most important field is <code>truthDocument</code> — Claude's full solution to the case, stored as JSONB. It is never included in any API response.</p>
+    <pre><code>@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "truth_document", columnDefinition = "jsonb")
+private Map&lt;String, Object&gt; truthDocument;  // ← NEVER sent to frontend
+
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "case_briefing", columnDefinition = "jsonb")
+private Map&lt;String, Object&gt; caseBriefing;   // ← shown to player</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">entity/Suspect.java</div>
+    <span class="tag tag-entity">@Entity</span>
+    <p>Each case has 5 suspects. The <code>isKiller</code> boolean is stored in the DB but never returned to the frontend. <code>avatarSeed</code> is used to generate deterministic DiceBear avatar images.</p>
+    <pre><code>@Column(name = "is_killer", nullable = false)
+private boolean isKiller;   // stored in DB, never returned to frontend
+
+@Column(name = "avatar_seed")
+private String avatarSeed;  // e.g. "suspect-vz-cto" — used for avatar URL</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">entity/Conversation.java &nbsp;|&nbsp; Folder.java &nbsp;|&nbsp; NpcInterruption.java</div>
+    <span class="tag tag-entity">@Entity</span>
+    <p><strong>Conversation</strong> — stores the full message history between player and a suspect as a JSONB array: <code>[{role, content, timestamp}]</code>.</p>
+    <p><strong>Folder</strong> — one per suspect per case. Player types free-form notes into <code>contradictions</code> and <code>intent_to_murder</code> text fields. These are submitted to the Lieutenant for verdict.</p>
+    <p><strong>NpcInterruption</strong> — stores mid-interrogation phone call conversations with NPCs (Senator, lawyer, FBI agent). Triggered during interrogation, saved here.</p>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">repository/ (6 interfaces)</div>
+    <span class="tag tag-repo">JpaRepository</span>
+    <p>Each entity has a Spring Data JPA repository. These interfaces give free CRUD methods with zero SQL. Custom query methods are derived from method names:</p>
+    <pre><code>// Spring generates the SQL automatically from the method name
+List&lt;Suspect&gt; findByGameCaseId(UUID caseId);
+Optional&lt;Folder&gt; findByGameCaseIdAndSuspectId(UUID caseId, UUID suspectId);
+Optional&lt;User&gt; findByEmail(String email);
+boolean existsByEmail(String email);</code></pre>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- STEP 2 -->
+  <h2>Step 2 — JWT Authentication</h2>
+
+  <p>Every request (except <code>/api/auth/**</code>) must include a valid JWT in the <code>Authorization: Bearer &lt;token&gt;</code> header. Sessions are stateless — no cookies, no server-side session storage.</p>
+
+  <div class="flow-box">
+    <h4>Auth Flow</h4>
+    <ol>
+      <li><span>Register:</span> Player sends username + email + password → password BCrypt-hashed → User saved → JWT generated → returned</li>
+      <li><span>Login:</span> Player sends email + password → AuthenticationManager validates → JWT generated → returned</li>
+      <li><span>Every protected request:</span> JwtAuthFilter reads header → extracts email from token → loads user → sets authentication in SecurityContext</li>
+    </ol>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">service/JwtService.java</div>
+    <span class="tag tag-service">@Service</span>
+    <p>Handles all JWT operations. Uses the <code>jjwt</code> library. The secret key comes from <code>application.yml</code>. Tokens expire after 24 hours (86400000ms).</p>
+    <pre><code>// Generate a token — subject is the user's email
+public String generateToken(UserDetails userDetails) {
+    return Jwts.builder()
+        .subject(userDetails.getUsername())   // email
+        .issuedAt(new Date())
+        .expiration(new Date(System.currentTimeMillis() + expiration))
+        .signWith(getSigningKey())
+        .compact();
+}
+
+// Validate — checks email match AND expiry
+public boolean isTokenValid(String token, UserDetails userDetails) {
+    return extractEmail(token).equals(userDetails.getUsername())
+        && !isTokenExpired(token);
+}</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">filter/JwtAuthFilter.java</div>
+    <span class="tag tag-filter">OncePerRequestFilter</span>
+    <p>Runs on every HTTP request exactly once. If a valid Bearer token is found, it loads the user and puts the authentication object into Spring's <code>SecurityContextHolder</code> — making the user "logged in" for the duration of that request.</p>
+    <pre><code>String authHeader = request.getHeader("Authorization");
+if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    filterChain.doFilter(request, response);  // no token → skip
+    return;
+}
+
+String token = authHeader.substring(7);       // strip "Bearer "
+String email = jwtService.extractEmail(token);
+
+if (email != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {
+    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+    if (jwtService.isTokenValid(token, userDetails)) {
+        // Mark this request as authenticated
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
+}</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">service/UserDetailsServiceImpl.java</div>
+    <span class="tag tag-service">UserDetailsService</span>
+    <p>Spring Security needs a way to load a user by username during authentication. We implement this interface and tell it to look up by email. This bridges Spring Security and our <code>UserRepository</code>.</p>
+    <pre><code>@Override
+public UserDetails loadUserByUsername(String email) {
+    return userRepository.findByEmail(email)
+        .map(user -> User.builder()
+            .username(user.getEmail())       // Spring Security uses email as username
+            .password(user.getPasswordHash())
+            .build())
+        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+}</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">config/SecurityConfig.java</div>
+    <span class="tag tag-config">@Configuration</span>
+    <p>Configures Spring Security. Key decisions: CSRF disabled (stateless JWT doesn't need it), sessions are STATELESS, only <code>/api/auth/**</code> is public, everything else requires a valid JWT.</p>
+    <pre><code>http
+    .csrf(AbstractHttpConfigurer::disable)
+    .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/api/auth/**").permitAll()  // register + login are open
+        .anyRequest().authenticated()                 // everything else needs JWT
+    )
+    .sessionManagement(session -> session
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // no sessions
+    )
+    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">controller/AuthController.java</div>
+    <span class="tag tag-controller">@RestController</span>
+    <h4>Endpoints</h4>
+    <p><code>POST /api/auth/register</code> — body: <code>{username, email, password}</code> → returns <code>{token, userId, username, email}</code></p>
+    <p><code>POST /api/auth/login</code> — body: <code>{email, password}</code> → returns same shape</p>
+    <pre><code>// DTOs with validation annotations
+public class RegisterRequest {
+    @NotBlank private String username;
+    @NotBlank @Email private String email;
+    @NotBlank @Size(min = 6) private String password;
+}</code></pre>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- STEP 3 -->
+  <h2>Step 3 — Case Generation (Claude AI)</h2>
+
+  <p>When a player starts a new game, the backend calls Claude to generate a complete murder mystery from scratch. This happens once per game. The full truth is stored in the DB and never touched again by the frontend.</p>
+
+  <div class="flow-box">
+    <h4>Case Creation Flow</h4>
+    <ol>
+      <li><span>POST /api/cases</span> — player hits the endpoint (JWT required)</li>
+      <li><span>CaseService</span> — gets current user from SecurityContext, calls CaseGenerationService</li>
+      <li><span>CaseGenerationService</span> — builds system + user prompts, calls ClaudeService</li>
+      <li><span>ClaudeService</span> — sends request to Anthropic API, returns raw JSON string</li>
+      <li><span>CaseGenerationService</span> — parses JSON into GeneratedCaseData object</li>
+      <li><span>CaseService</span> — saves GameCase + 5 Suspects + 5 empty Folders to DB</li>
+      <li><span>CaseResponse</span> — returned to frontend (no truthDocument, no isKiller)</li>
+    </ol>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">service/ClaudeService.java</div>
+    <span class="tag tag-service">@Service</span>
+    <p>Thin wrapper around the Anthropic Java SDK. Reads the API key and model from config. The <code>@PostConstruct</code> method builds the client once on startup. Exposes a single <code>generate(system, user)</code> method.</p>
+    <pre><code>@PostConstruct
+public void init() {
+    client = AnthropicOkHttpClient.builder()
+        .apiKey(apiKey)   // from application-local.yml
+        .build();
+}
+
+public String generate(String systemPrompt, String userPrompt) {
+    MessageCreateParams params = MessageCreateParams.builder()
+        .model(model)          // "claude-haiku-4-5" in dev
+        .maxTokens(4096L)
+        .system(systemPrompt)
+        .addUserMessage(userPrompt)
+        .build();
+
+    Message response = client.messages().create(params);
+
+    return response.content().stream()
+        .flatMap(block -> block.text().stream())
+        .map(textBlock -> textBlock.text())
+        .reduce("", String::concat);
+}</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">service/CaseGenerationService.java</div>
+    <span class="tag tag-service">@Service</span>
+    <p>Contains the prompt engineering. The system prompt tells Claude to act as a mystery writer and return only raw JSON. The user prompt defines the exact JSON schema Claude must follow — including 5 suspects, truth document, case briefing, and all the lies, contradictions and motives.</p>
+    <pre><code>// System prompt — sets Claude's role
+"You are a mystery writer generating a Silicon Valley murder mystery for a detective game.
+ You must respond ONLY with valid JSON. No markdown, no explanation, no code blocks."
+
+// User prompt — defines exact output schema
+{
+  "caseBriefing": { headline, articleBody, founderName, ... },
+  "suspects": [{
+    name, age, title, isKiller,
+    trueAlibi,     // where they actually were
+    lieTheyTell,   // what they tell the detective
+    contradiction, // detail that exposes the lie
+    motiveToKill
+  }],
+  "truthDocument": { killerName, weapon, method, crimeTimeline, ... }
+}
+
+// Parse response into typed Java object
+return objectMapper.readValue(cleaned, GeneratedCaseData.class);</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">dto/generation/GeneratedCaseData.java &amp; GeneratedSuspectData.java</div>
+    <span class="tag tag-dto">Internal DTO</span>
+    <p>These are purely internal — Jackson deserializes Claude's JSON response into these POJOs. They are never serialized back to the frontend. <code>@JsonIgnoreProperties(ignoreUnknown = true)</code> means if Claude adds unexpected fields, the app won't crash.</p>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">service/CaseService.java</div>
+    <span class="tag tag-service">@Service</span>
+    <p>Orchestrates the full case creation. Runs in a single <code>@Transactional</code> block — if anything fails, nothing gets saved to the DB. Also creates empty Folder rows for each suspect upfront, so the player can immediately start taking notes.</p>
+    <pre><code>@Transactional
+public CaseResponse createCase() {
+    User user = getCurrentUser();                    // from SecurityContext
+    GeneratedCaseData generated = caseGenerationService.generateCase(); // calls Claude
+
+    GameCase gameCase = GameCase.builder()
+        .user(user)
+        .truthDocument(generated.getTruthDocument()) // stored, never returned
+        .caseBriefing(generated.getCaseBriefing())
+        .build();
+    caseRepository.save(gameCase);
+
+    // Save 5 suspects + create empty folder for each
+    suspects.forEach(suspect -> folderRepository.save(
+        Folder.builder().gameCase(gameCase).suspect(suspect).build()
+    ));
+
+    user.setGamesPlayed(user.getGamesPlayed() + 1);
+    userRepository.save(user);
+
+    return CaseResponse.from(gameCase, suspectResponses); // safe — no secrets
+}</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">dto/cases/CaseResponse.java &amp; SuspectResponse.java</div>
+    <span class="tag tag-dto">Public DTO</span>
+    <p>These are the objects returned to the frontend. <code>CaseResponse</code> deliberately excludes <code>truthDocument</code>. <code>SuspectResponse</code> deliberately excludes <code>isKiller</code>. The static <code>from()</code> factory method handles the mapping.</p>
+    <pre><code>// CaseResponse includes: id, status, caseBriefing, suspects, verdict
+// CaseResponse EXCLUDES: truthDocument
+
+// SuspectResponse includes: id, name, age, title, company, avatarSeed
+// SuspectResponse EXCLUDES: isKiller, trueAlibi, lieTheyTell, contradiction</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">controller/CaseController.java</div>
+    <span class="tag tag-controller">@RestController</span>
+    <h4>Endpoints</h4>
+    <p><code>POST /api/cases</code> — creates a new case, calls Claude (~5-15s), returns full CaseResponse</p>
+    <p><code>GET /api/cases/{caseId}</code> — retrieves existing case (ownership verified — you can't read another user's case)</p>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- CONFIG -->
+  <h2>Configuration Files</h2>
+
+  <div class="file-block">
+    <div class="file-path">src/main/resources/application.yml</div>
+    <span class="tag tag-config">Committed to git</span>
+    <p>Safe defaults only. No real secrets. Placeholders use <code>${ENV_VAR:default}</code> syntax — Spring reads the env var if set, otherwise uses the default.</p>
+    <pre><code>spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/caseclosed
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}          # empty default — set in local file
+
+  jpa:
+    hibernate:
+      ddl-auto: update                 # auto-creates tables on startup
+    show-sql: true
+
+jwt:
+  secret: ${JWT_SECRET:...}            # long secret for signing tokens
+  expiration: 86400000                 # 24 hours in milliseconds
+
+claude:
+  api-key: ${ANTHROPIC_API_KEY:}       # empty default — set in local file
+  model: ${CLAUDE_MODEL:claude-haiku-4-5}
+
+server:
+  port: 8081</code></pre>
+  </div>
+
+  <div class="file-block">
+    <div class="file-path">src/main/resources/application-local.yml</div>
+    <span class="tag tag-config">GITIGNORED — never committed</span>
+    <div class="secret-note">⚠️ This file contains real credentials. It is listed in .gitignore and must never be committed to version control.</div>
+    <pre><code>spring:
+  datasource:
+    password: your-db-password
+
+claude:
+  api-key: sk-ant-...</code></pre>
+    <p>Activated by running with: <code>./mvnw spring-boot:run "-Dspring-boot.run.profiles=local"</code></p>
+    <p>In production (Railway), these values are set as environment variables in the platform dashboard — no file needed.</p>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DEPENDENCIES -->
+  <h2>Key Dependencies (pom.xml)</h2>
+
+  <div class="file-block">
+    <pre><code>spring-boot-starter-data-jpa    → JPA + Hibernate (ORM — maps Java classes to DB tables)
+spring-boot-starter-security    → Spring Security (authentication framework)
+spring-boot-starter-web         → REST API (embedded Tomcat server)
+spring-boot-starter-validation  → @NotBlank, @Email, @Size on DTOs
+postgresql                      → PostgreSQL JDBC driver
+lombok                          → @Data, @Builder, @RequiredArgsConstructor (less boilerplate)
+jjwt-api / jjwt-impl / jjwt-jackson  → JWT generation and validation
+anthropic-java:2.16.0           → Official Anthropic SDK for calling Claude API</code></pre>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- WHAT'S NEXT -->
+  <h2>What's Built vs What's Next</h2>
+
+  <div class="grid">
+    <div class="db-table">
+      <h4 style="color:#4caf82">✓ Done</h4>
+      <ul>
+        <li>All 6 database tables</li>
+        <li>All 6 JPA entities</li>
+        <li>All 6 JPA repositories</li>
+        <li>JWT register + login</li>
+        <li>JWT filter on all routes</li>
+        <li>Claude case generation</li>
+        <li>POST /api/cases</li>
+        <li>GET /api/cases/{id}</li>
+      </ul>
+    </div>
+    <div class="db-table">
+      <h4 style="color:#f0a500">→ Coming Next</h4>
+      <ul>
+        <li>Interrogation endpoint (SSE streaming)</li>
+        <li>Claude plays suspect in real-time</li>
+        <li>Folder update endpoints</li>
+        <li>NPC interruption system</li>
+        <li>Accusation + verdict endpoint</li>
+        <li>Claude evaluates folder strength</li>
+        <li>React frontend</li>
+        <li>Deployment (Railway + Vercel)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

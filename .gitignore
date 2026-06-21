@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.claude/
+target/
+*.jar
+.idea/
+.vscode/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

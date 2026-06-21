@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Google Fonts for 1990s NYPD Aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Inter for UI, VT323 for Terminal -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+    
+    <title>CASE CLOSED - NYPD Homicide Desk</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-300 font-ui antialiased overflow-hidden">
+    <!-- Global CRT Scanline Overlay -->
+    <div class="pointer-events-none fixed inset-0 z-50 crt-overlay opacity-30"></div>
+    
+    <div id="root" class="h-screen w-screen flex flex-col"></div>
+    
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

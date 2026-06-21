@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/caseclosed
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+jwt:
+  secret: ${JWT_SECRET:3caseClosedSuperSecretKeyForJWTSigning2026MustBe256BitsLong!!}
+  expiration: 86400000
+
+claude:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${CLAUDE_MODEL:claude-haiku-4-5}
+
+server:
+  port: 8081
